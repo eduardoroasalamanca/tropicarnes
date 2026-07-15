@@ -21,19 +21,30 @@ st.set_page_config(
     page_icon=icono_app
 )
 
-# ---- COMPONENTE DE ESTILO PARA OCULTAR ELEMENTOS DE DESARROLLADOR ----
-# Este bloque oculta el menú, la barra superior, GitHub, Fork y el botón de administración
+# ---- COMPONENTE DE ESTILO PARA OCULTAR ELEMENTOS SIN DAÑAR EL SIDEBAR ----
+# Ocultamos solo lo innecesario, pero dejamos libre y funcional el botón del sidebar izquierdo
 hide_streamlit_style = """
     <style>
+    /* Ocultar el menú de los 3 puntos superior derecho */
     #MainMenu {visibility: hidden; display: none !important;}
+    
+    /* Ocultar el pie de página de Streamlit */
     footer {visibility: hidden; display: none !important;}
-    header {visibility: hidden; display: none !important;}
-    [data-testid="stHeader"] {visibility: hidden; display: none !important;}
+    
+    /* Ocultar la línea roja/decorativa superior */
     div[data-testid="stDecoration"] {display: none !important;}
+    
+    /* Ocultar el botón de Deploy (Share) */
     .stAppDeployButton {display: none !important;}
+    
+    /* Ocultar el estatus de conexión */
     #stConnectionStatus {display: none !important;}
-    iframe[title="Manage app"] {display: none !important;}
-    button[data-testid="manage-app-button"] {display: none !important;}
+    
+    /* Hacer la cabecera invisible pero activa para que el botón de abrir sidebar siga funcionando */
+    [data-testid="stHeader"] {
+        background-color: rgba(0,0,0,0) !important;
+        background: transparent !important;
+    }
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -271,7 +282,7 @@ else:
         
     st.markdown("---")
     nombre_vecino = st.text_input("Introduzca su Nombre (Opcional):", placeholder="Ej. Sra. Carmen (Piso 2)", key="input_nombre_vecino")
-    notas_pedido = st.text_area(
+    notes_pedido = st.text_area(
         "📝 Instrucciones Especiales (Opcional):", 
         placeholder="Ej: La carne en bistec delgado, el pollo picado para guisar, o si desea un gramaje específico de queso.",
         key="input_notas_pedido"
@@ -285,7 +296,7 @@ else:
         for pedido in carrito_compras:
             texto_wa += f"- {pedido['cant']} {pedido['unidad']} de {pedido['item']}\n"
         
-        if notas_limpias := notas_pedido.strip():
+        if notas_limpias := notes_pedido.strip():
             texto_wa += f"\n*Notas especiales:* {notas_limpias}\n"
         
         texto_wa += "\n*Nota:* Por favor, me avisan por aquí mismo cuando lo tengan listo para pasar pagando y retirando de una vez. ¡Muchas gracias!"
