@@ -6,6 +6,7 @@ import os
 import unicodedata
 import base64
 from difflib import SequenceMatcher
+import requests
 
 # =====================================================================
 # 1. CONFIGURACIÓN DE LA PÁGINA E ÍCONO DE PESTAÑA
@@ -73,18 +74,14 @@ components.html(
 
 
 # =====================================================================
-# 2. GESTIÓN DE PERSISTENCIA DE DATOS (INVENTARIO JSON)
+# 2. GESTIÓN DE PERSISTENCIA DE DATOS (NUBE VÍA GITHUB GIST)
 # =====================================================================
-ARCHIVO_INVENTARIO = "inventario.json"
-
+@st.cache_data(ttl=2)
 def cargar_inventario():
-    if os.path.exists(ARCHIVO_INVENTARIO):
-        try:
-            with open(ARCHIVO_INVENTARIO, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except:
-            pass
-    return {
+    token = st.secrets.get("GITHUB_TOKEN")
+    gist_id = st.secrets.get("GIST_ID")
+    
+    inventario_defecto = {
         "🔥 Ofertas del Día": ["Combo Sopera (3Kg x $10)", "Queso Llanero en Promoción (Kg)"],
         "Res": ["Pulpa Negra (Bistec/Para Guisar)", "Carne Molida de Primera", "Lagarto con Hueso", "Costilla de Res"],
         "Aves": ["Pollo Entero Limpio", "Pechuga de Pollo", "Milanesas de Pollo"],
@@ -94,10 +91,65 @@ def cargar_inventario():
         "Panadería Artesanal": ["Pan Canilla (Unidad)", "Pan Campesino (Unidad)"],
         "Limpieza y Aseo": ["Jabón en Polvo 1kg", "Cloro Líquido 1L", "Lavaplatos en Crema"]
     }
+    
+    if not token or not gist_id:
+        if os.path.exists("inventario.json"):
+            try:
+                with open("inventario.json", "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except:
+                pass
+        return inventario_defecto
+    
+    try:
+        headers = {"Authorization": f"token {token}"}
+        response = requests.get(f"https://api.github.com/gists/{gist_id}", headers=headers, timeout=5)
+        if response.status_code == 200:
+            gist_data = response.json()
+            contenido_archivo = gist_data["files"]["inventario.json"]["content"]
+            return json.loads(contenido_archivo)
+    except Exception as e:
+        pass
+            
+    return inventario_defecto
 
 def guardar_inventario(inventario):
-    with open(ARCHIVO_INVENTARIO, "w", encoding="utf-8") as f:
-        json.dump(inventario, f, ensure_ascii=False, indent=4)
+    token = st.secrets.get("GITHUB_TOKEN")
+    gist_id = st.secrets.get("GIST_ID")
+    
+    if not token or not gist_id:
+        try:
+            with open("inventario.json", "w", encoding="utf-8") as f:
+                json.dump(inventario, f, ensure_ascii=False, indent=4)
+        except:
+            pass
+        return
+    
+    try:
+        headers = {
+            "Authorization": f"token {token}",
+            "Accept": "application/vnd.github+json"
+        }
+        payload = {
+            "files": {
+                "inventario.json": {
+                    "content": json.dumps(inventario, ensure_ascii=False, indent=4)
+                }
+            }
+        }
+        response = requests.patch(f"https://api.github.com/gists/{gist_id}", headers=headers, json=payload, timeout=5)
+        if response.status_code != 200:
+            st.error(f"Error al guardar en la nube (Gist): {response.status_code}")
+    except Exception as e:
+        st.error(f"Error de conexión al guardar: {e}")
+        
+    try:
+        with open("inventario.json", "w", encoding="utf-8") as f:
+            json.dump(inventario, f, ensure_ascii=False, indent=4)
+    except:
+        pass
+        
+    st.cache_data.clear()
 
 inventario_local = cargar_inventario()
 

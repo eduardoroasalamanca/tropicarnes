@@ -6,6 +6,7 @@ import os
 import unicodedata
 import base64
 from difflib import SequenceMatcher
+import requests
 
 # =====================================================================
 # 1. CONFIGURACIÓN DE LA PÁGINA E ÍCONO DE PESTAÑA
@@ -22,7 +23,6 @@ st.set_page_config(
 )
 
 # ---- COMPONENTE DE ESTILO CSS QUIRÚRGICO (CLIENTES) ----
-# Aquí eliminamos por completo el stHeader para que no haya rastro del menú superior
 hide_streamlit_style = """
     <style>
     /* Ocultar por completo la cabecera (Fork, GitHub, 3 puntos) */
@@ -63,18 +63,14 @@ components.html(
 
 
 # =====================================================================
-# 2. GESTIÓN DE PERSISTENCIA DE DATOS (INVENTARIO JSON)
+# 2. GESTIÓN DE PERSISTENCIA DE DATOS (NUBE VÍA GITHUB GIST)
 # =====================================================================
-ARCHIVO_INVENTARIO = "inventario.json"
-
+@st.cache_data(ttl=5)
 def cargar_inventario():
-    if os.path.exists(ARCHIVO_INVENTARIO):
-        try:
-            with open(ARCHIVO_INVENTARIO, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except:
-            pass
-    return {
+    token = st.secrets.get("GITHUB_TOKEN")
+    gist_id = st.secrets.get("GIST_ID")
+    
+    inventario_defecto = {
         "🔥 Ofertas del Día": ["Combo Sopera (3Kg x $10)", "Queso Llanero en Promoción (Kg)"],
         "Res": ["Pulpa Negra (Bistec/Para Guisar)", "Carne Molida de Primera", "Lagarto con Hueso", "Costilla de Res"],
         "Aves": ["Pollo Entero Limpio", "Pechuga de Pollo", "Milanesas de Pollo"],
@@ -84,6 +80,28 @@ def cargar_inventario():
         "Panadería Artesanal": ["Pan Canilla (Unidad)", "Pan Campesino (Unidad)"],
         "Limpieza y Aseo": ["Jabón en Polvo 1kg", "Cloro Líquido 1L", "Lavaplatos en Crema"]
     }
+    
+    if not token or not gist_id:
+        # Fallback local si no hay secrets configurados
+        if os.path.exists("inventario.json"):
+            try:
+                with open("inventario.json", "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except:
+                pass
+        return inventario_defecto
+    
+    try:
+        headers = {"Authorization": f"token {token}"}
+        response = requests.get(f"https://api.github.com/gists/{gist_id}", headers=headers, timeout=5)
+        if response.status_code == 200:
+            gist_data = response.json()
+            contenido_archivo = gist_data["files"]["inventario.json"]["content"]
+            return json.loads(contenido_archivo)
+    except Exception as e:
+        pass
+            
+    return inventario_defecto
 
 inventario_local = cargar_inventario()
 
