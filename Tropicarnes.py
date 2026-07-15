@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import urllib.parse
 import json
 import os
@@ -20,61 +21,52 @@ st.set_page_config(
     page_icon=icono_app
 )
 
-# ---- COMPONENTE DE ESTILO CSS QUIRÚRGICO Y SEGURO (SIN RIESGOS DE CORS) ----
+# ---- REDIRECCIÓN AUTOMÁTICA AL MODO EMBEBIDO LIMPIO (GARANTÍA ABSOLUTA) ----
+# Si el usuario entra por la URL normal, lo llevamos de inmediato a la versión sin barra de desarrollo
+components.html(
+    """
+    <script>
+        // Solo aplicar la redirección automática si estamos en el servidor de producción
+        if (window.location.hostname.includes('streamlit.app')) {
+            if (!window.location.search.includes('embed=true')) {
+                window.top.location.href = "https://tropicarnes.streamlit.app/?embed=true";
+            }
+        }
+    </script>
+    """,
+    height=0,
+)
+
+# ---- COMPONENTE DE ESTILO CSS QUIRÚRGICO INTERNO ----
+# Oculta únicamente los elementos molestos del iframe local sin alterar el menú lateral
 hide_streamlit_style = """
     <style>
-    /* 1. ELIMINAR LA LÍNEA ROJA DECORATIVA SUPERIOR */
+    /* Ocultar la barra roja superior */
     div[data-testid="stDecoration"] { 
         display: none !important; 
     }
     
-    /* 2. ELIMINAR EL MENÚ DE 3 PUNTOS POR DEFECTO DE STREAMLIT */
-    [data-testid="stMainMenu"] { 
-        display: none !important; 
-        visibility: hidden !important; 
-    }
-    
-    /* 3. ELIMINAR EL BOTÓN DE DEPLOY INTERNO */
-    .stAppDeployButton { 
-        display: none !important; 
-    }
-    [data-testid="stAppDeployButton"] { 
-        display: none !important; 
-    }
-    
-    /* 4. ELIMINAR EL PIE DE PÁGINA ("Made with Streamlit") */
+    /* Ocultar el pie de página de Streamlit */
     footer { 
         display: none !important; 
         visibility: hidden !important; 
     }
     
-    /* 5. ELIMINAR EL ESTADO DE CONEXIÓN */
-    #stConnectionStatus { 
+    /* Ocultar el menú interno de 3 puntos si llegase a aparecer */
+    [data-testid="stMainMenu"] { 
+        display: none !important; 
+        visibility: hidden !important; 
+    }
+    
+    /* Ocultar el botón interno de Deploy */
+    .stAppDeployButton { 
         display: none !important; 
     }
     
-    /* 6. ELIMINAR EL BOTÓN FLOTANTE DE "MANAGE APP" SI APARECE EN NUESTRO CONTEXTO */
-    [data-testid="manage-app-button"] { 
-        display: none !important; 
-    }
-    button[data-testid="manage-app-button"] { 
-        display: none !important; 
-    }
-    iframe[title="Manage app"] { 
-        display: none !important; 
-    }
-    
-    /* 7. ASEGURAR QUE LA CABECERA SEA TRANSPARENTE */
+    /* Asegurar que el fondo de la cabecera no tape el botón del menú */
     [data-testid="stHeader"] {
         background-color: rgba(0,0,0,0) !important;
         background: transparent !important;
-    }
-    
-    /* 8. PROTEGER Y BLINDAR EL BOTÓN DEL MENÚ LATERAL (SIDEBAR) */
-    [data-testid="stSidebarCollapse"] {
-        display: inline-flex !important;
-        visibility: visible !important;
-        z-index: 999999 !important;
     }
     </style>
 """
