@@ -20,28 +20,21 @@ st.set_page_config(
     page_icon=icono_app
 )
 
-# ---- COMPONENTE DE ESTILO CSS PARA INTERFAZ LIMPIA (URL NORMAL) ----
+# ---- COMPONENTE DE ESTILO CSS ORIGINAL (LIMPIEZA DE INTERFAZ ESTÁNDAR) ----
 hide_streamlit_style = """
     <style>
-    /* 1. Ocultar la línea roja decorativa superior */
+    /* Ocultar la línea roja decorativa superior */
     div[data-testid="stDecoration"] { 
         display: none !important; 
     }
     
-    /* 2. Ocultar por completo el pie de página estándar ("Made with Streamlit") */
+    /* Ocultar por completo el pie de página estándar ("Made with Streamlit") */
     footer { 
         display: none !important; 
         visibility: hidden !important; 
     }
     
-    /* 3. Hacer transparente la cabecera para mantener despejado el botón del menú lateral */
-    [data-testid="stHeader"] {
-        background-color: rgba(0,0,0,0) !important;
-        background: transparent !important;
-        border-bottom: none !important;
-    }
-    
-    /* 4. Evitar márgenes excesivos en la parte inferior de la aplicación */
+    /* Reajustar márgenes inferiores para eliminar espacios vacíos */
     .stApp {
         margin-bottom: 0px !important;
         padding-bottom: 0px !important;
