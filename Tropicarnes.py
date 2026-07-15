@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import urllib.parse
 import json
 import os
@@ -21,102 +20,42 @@ st.set_page_config(
     page_icon=icono_app
 )
 
-# ---- COMPONENTE DE ESTILO CSS INTERNO DE LA APP ----
-# Oculta elementos internos de la interfaz pero blinda el botón del menú izquierdo
+# ---- COMPONENTE DE ESTILO CSS BLINDADO (SIN JAVASCRIPT) ----
 hide_streamlit_style = """
     <style>
-    /* Ocultar menú de 3 puntos y botón de Deploy en el top derecho interno */
-    #MainMenu {visibility: hidden; display: none !important;}
-    [data-testid="stMainMenu"] {visibility: hidden; display: none !important;}
-    .stAppDeployButton {display: none !important;}
+    /* 1. ELIMINAR LA BARRA ROJA DE ARRIBA, EL PIE DE PÁGINA Y ESTADO DE CONEXIÓN */
+    div[data-testid="stDecoration"] { display: none !important; }
+    footer { visibility: hidden; display: none !important; }
+    #stConnectionStatus { display: none !important; }
     
-    /* Ocultar pie de página y línea roja decorativa */
-    footer {visibility: hidden; display: none !important;}
-    div[data-testid="stDecoration"] {display: none !important;}
-    #stConnectionStatus {display: none !important;}
-    
-    /* Hacer la cabecera transparente pero activa para el botón sidebar */
+    /* 2. OBLIGAR A LA CABECERA A SER TRANSPARENTE */
     [data-testid="stHeader"] {
         background-color: rgba(0,0,0,0) !important;
         background: transparent !important;
     }
     
-    /* BLINDAR EL BOTÓN DEL MENU IZQUIERDO (Asegurar que se vea siempre) */
-    [data-testid="stSidebarCollapse"] {
-        visibility: visible !important;
+    /* 3. OBLITERAR TODOS LOS ENLACES (Fork, GitHub) Y BOTONES (Share, Deploy, Menú) DE LA CABECERA */
+    [data-testid="stHeader"] a {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    [data-testid="stHeader"] button {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    
+    /* 4. REGLA DE ESPECIFICIDAD MÁXIMA: RESUCITAR ÚNICA Y EXCLUSIVAMENTE EL BOTÓN DEL SIDEBAR */
+    [data-testid="stHeader"] [data-testid="stSidebarCollapse"] {
         display: inline-flex !important;
+        visibility: visible !important;
+    }
+    [data-testid="stHeader"] [data-testid="stSidebarCollapse"] button {
+        display: inline-flex !important;
+        visibility: visible !important;
     }
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-# ---- HACK JAVASCRIPT EXTREMO PARA EL CONTENEDOR PADRE ----
-# Inyecta estilos directamente en la ventana principal de Streamlit Cloud y barre constantemente
-components.html(
-    """
-    <script>
-        const hideStreamlitBranding = () => {
-            if (window.top && window.top.document) {
-                const doc = window.top.document;
-                
-                // 1. Inyectar CSS directamente en el documento PADRE para aplastar el toolbar de raíz
-                if (!doc.getElementById('tropicarnes-parent-cleaner')) {
-                    const style = doc.createElement('style');
-                    style.id = 'tropicarnes-parent-cleaner';
-                    style.innerHTML = `
-                        /* Ocultar enlaces de GitHub, Manage App y marcas de agua en el padre */
-                        a[href*="github.com"] { display: none !important; }
-                        iframe[title="Manage app"] { display: none !important; }
-                        button[data-testid="manage-app-button"] { display: none !important; }
-                        [href*="streamlit.io"] { display: none !important; }
-                        [class*="viewerBadge"] { display: none !important; }
-                        [class*="StatusWidget"] { display: none !important; }
-                        [data-testid="stStatusWidget"] { display: none !important; }
-                        
-                        /* Ocultar el toolbar superior derecho del visualizador de Streamlit Cloud */
-                        div[class*="ViewerHeader"] button:not([data-testid="stSidebarCollapse"]),
-                        div[class*="ViewerHeader"] a,
-                        div[class*="viewer-header"] button:not([data-testid="stSidebarCollapse"]),
-                        div[class*="viewer-header"] a,
-                        header button:not([data-testid="stSidebarCollapse"]),
-                        header a,
-                        div[class*="Header"] button:not([data-testid="stSidebarCollapse"]),
-                        div[class*="Header"] a {
-                            display: none !important;
-                            visibility: hidden !important;
-                        }
-                    `;
-                    doc.head.appendChild(style);
-                }
-                
-                // 2. Ejecutar limpieza activa por JS por si acaso para barrer elementos renderizados dinámicamente
-                const targets = doc.querySelectorAll(
-                    '[href*="github.com"], [href*="streamlit.io"], [class*="viewerBadge"], [class*="StatusWidget"], [data-testid="stStatusWidget"], iframe[title="Manage app"], button[data-testid="manage-app-button"]'
-                );
-                targets.forEach(e => e.style.setProperty("display", "none", "important"));
-                
-                // Ocultar botones de la barra superior que tengan texto 'Share', 'Edit' o iconos de 'Star'
-                const allButtons = doc.querySelectorAll('button, a');
-                allButtons.forEach(e => {
-                    const text = (e.textContent || '').trim().toLowerCase();
-                    const label = (e.getAttribute('aria-label') || '').toLowerCase();
-                    const title = (e.getAttribute('title') || '').toLowerCase();
-                    if (text === 'share' || label.includes('edit') || title.includes('edit') || 
-                        label.includes('star') || title.includes('star') || 
-                        label.includes('favorite') || title.includes('favorite')) {
-                        e.style.setProperty("display", "none", "important");
-                    }
-                });
-            }
-        };
-        
-        // Ejecutar limpieza inmediata y dejar un loop activo cada segundo para evitar el resurgimiento por React
-        hideStreamlitBranding();
-        setInterval(hideStreamlitBranding, 1000);
-    </script>
-    """,
-    height=0,
-)
 
 
 # =====================================================================
