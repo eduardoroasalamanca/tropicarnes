@@ -20,6 +20,24 @@ st.set_page_config(
     page_icon=icono_app
 )
 
+# ---- COMPONENTE DE ESTILO PARA OCULTAR ELEMENTOS DE DESARROLLADOR ----
+# Este bloque oculta el menú, la barra superior, GitHub, Fork y el botón de administración
+hide_streamlit_style = """
+    <style>
+    #MainMenu {visibility: hidden; display: none !important;}
+    footer {visibility: hidden; display: none !important;}
+    header {visibility: hidden; display: none !important;}
+    [data-testid="stHeader"] {visibility: hidden; display: none !important;}
+    div[data-testid="stDecoration"] {display: none !important;}
+    .stAppDeployButton {display: none !important;}
+    #stConnectionStatus {display: none !important;}
+    iframe[title="Manage app"] {display: none !important;}
+    button[data-testid="manage-app-button"] {display: none !important;}
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+
 # =====================================================================
 # 2. GESTIÓN DE PERSISTENCIA DE DATOS (INVENTARIO JSON)
 # =====================================================================
@@ -133,7 +151,7 @@ if modo_admin:
         st.markdown("##### Add Producto")
         nuevo_prod = st.text_input("Nombre del nuevo artículo:", placeholder="Ej: Mortadela Especial 1kg", key="input_nuevo_prod").strip()
         if st.button("➕ Registrar Producto", key="btn_registrar_prod"):
-            if nuevo_prod and nuevo_prod not in inventario_local[cat_seleccionada]:
+            if nuevo_prod and nuevo_prod not in_inventario_local[cat_seleccionada]:
                 inventario_local[cat_seleccionada].append(nuevo_prod)
                 guardar_inventario(inventario_local)
                 st.success(f"Agregado: {nuevo_prod}")
