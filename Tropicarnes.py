@@ -20,38 +20,61 @@ st.set_page_config(
     page_icon=icono_app
 )
 
-# ---- COMPONENTE DE ESTILO CSS BLINDADO (SIN JAVASCRIPT) ----
+# ---- COMPONENTE DE ESTILO CSS QUIRÚRGICO Y SEGURO (SIN RIESGOS DE CORS) ----
 hide_streamlit_style = """
     <style>
-    /* 1. ELIMINAR LA BARRA ROJA DE ARRIBA, EL PIE DE PÁGINA Y ESTADO DE CONEXIÓN */
-    div[data-testid="stDecoration"] { display: none !important; }
-    footer { visibility: hidden; display: none !important; }
-    #stConnectionStatus { display: none !important; }
+    /* 1. ELIMINAR LA LÍNEA ROJA DECORATIVA SUPERIOR */
+    div[data-testid="stDecoration"] { 
+        display: none !important; 
+    }
     
-    /* 2. OBLIGAR A LA CABECERA A SER TRANSPARENTE */
+    /* 2. ELIMINAR EL MENÚ DE 3 PUNTOS POR DEFECTO DE STREAMLIT */
+    [data-testid="stMainMenu"] { 
+        display: none !important; 
+        visibility: hidden !important; 
+    }
+    
+    /* 3. ELIMINAR EL BOTÓN DE DEPLOY INTERNO */
+    .stAppDeployButton { 
+        display: none !important; 
+    }
+    [data-testid="stAppDeployButton"] { 
+        display: none !important; 
+    }
+    
+    /* 4. ELIMINAR EL PIE DE PÁGINA ("Made with Streamlit") */
+    footer { 
+        display: none !important; 
+        visibility: hidden !important; 
+    }
+    
+    /* 5. ELIMINAR EL ESTADO DE CONEXIÓN */
+    #stConnectionStatus { 
+        display: none !important; 
+    }
+    
+    /* 6. ELIMINAR EL BOTÓN FLOTANTE DE "MANAGE APP" SI APARECE EN NUESTRO CONTEXTO */
+    [data-testid="manage-app-button"] { 
+        display: none !important; 
+    }
+    button[data-testid="manage-app-button"] { 
+        display: none !important; 
+    }
+    iframe[title="Manage app"] { 
+        display: none !important; 
+    }
+    
+    /* 7. ASEGURAR QUE LA CABECERA SEA TRANSPARENTE */
     [data-testid="stHeader"] {
         background-color: rgba(0,0,0,0) !important;
         background: transparent !important;
     }
     
-    /* 3. OBLITERAR TODOS LOS ENLACES (Fork, GitHub) Y BOTONES (Share, Deploy, Menú) DE LA CABECERA */
-    [data-testid="stHeader"] a {
-        display: none !important;
-        visibility: hidden !important;
-    }
-    [data-testid="stHeader"] button {
-        display: none !important;
-        visibility: hidden !important;
-    }
-    
-    /* 4. REGLA DE ESPECIFICIDAD MÁXIMA: RESUCITAR ÚNICA Y EXCLUSIVAMENTE EL BOTÓN DEL SIDEBAR */
-    [data-testid="stHeader"] [data-testid="stSidebarCollapse"] {
+    /* 8. PROTEGER Y BLINDAR EL BOTÓN DEL MENÚ LATERAL (SIDEBAR) */
+    [data-testid="stSidebarCollapse"] {
         display: inline-flex !important;
         visibility: visible !important;
-    }
-    [data-testid="stHeader"] [data-testid="stSidebarCollapse"] button {
-        display: inline-flex !important;
-        visibility: visible !important;
+        z-index: 999999 !important;
     }
     </style>
 """
