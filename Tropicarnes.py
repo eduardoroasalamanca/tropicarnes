@@ -151,7 +151,7 @@ if modo_admin:
         st.markdown("##### Add Producto")
         nuevo_prod = st.text_input("Nombre del nuevo artículo:", placeholder="Ej: Mortadela Especial 1kg", key="input_nuevo_prod").strip()
         if st.button("➕ Registrar Producto", key="btn_registrar_prod"):
-            if nuevo_prod and nuevo_prod not in_inventario_local[cat_seleccionada]:
+            if nuevo_prod and nuevo_prod not in inventario_local[cat_seleccionada]:
                 inventario_local[cat_seleccionada].append(nuevo_prod)
                 guardar_inventario(inventario_local)
                 st.success(f"Agregado: {nuevo_prod}")
