@@ -4,12 +4,12 @@ import urllib.parse
 import json
 import os
 import unicodedata
+import base64
 from difflib import SequenceMatcher
 
 # =====================================================================
 # 1. CONFIGURACIÓN DE LA PÁGINA E ÍCONO DE PESTAÑA
 # =====================================================================
-# Si el archivo "logo.png" existe, lo adopta en la pestaña del navegador
 if os.path.exists("logo.png"):
     icono_app = "logo.png"
 else:
@@ -21,36 +21,37 @@ st.set_page_config(
     page_icon=icono_app
 )
 
-# ---- COMPONENTE DE ESTILO PARA OCULTAR ELEMENTOS SIN DAÑAR EL SIDEBAR ----
-# Ocultamos solo lo innecesario, pero dejamos libre y funcional el botón del sidebar izquierdo
+# ---- COMPONENTE DE ESTILO CSS QUIRÚRGICO ----
+# Oculta de raíz la parte derecha de la cabecera, pero blinda el botón del menú izquierdo
 hide_streamlit_style = """
     <style>
-    /* Ocultar el menú de los 3 puntos superior derecho */
+    /* Ocultar menú de 3 puntos y botón de Deploy en el top derecho */
     #MainMenu {visibility: hidden; display: none !important;}
-    
-    /* Ocultar el pie de página de Streamlit */
-    footer {visibility: hidden; display: none !important;}
-    
-    /* Ocultar la línea roja/decorativa superior */
-    div[data-testid="stDecoration"] {display: none !important;}
-    
-    /* Ocultar el botón de Deploy (Share) */
+    [data-testid="stMainMenu"] {visibility: hidden; display: none !important;}
     .stAppDeployButton {display: none !important;}
     
-    /* Ocultar el estatus de conexión */
+    /* Ocultar pie de página y línea roja decorativa */
+    footer {visibility: hidden; display: none !important;}
+    div[data-testid="stDecoration"] {display: none !important;}
     #stConnectionStatus {display: none !important;}
     
-    /* Hacer la cabecera invisible pero activa para que el botón de abrir sidebar siga funcionando */
+    /* Hacer la cabecera transparente pero activa para que el botón sidebar funcione */
     [data-testid="stHeader"] {
         background-color: rgba(0,0,0,0) !important;
         background: transparent !important;
+    }
+    
+    /* BLINDAR EL BOTÓN DEL MENU IZQUIERDO (Asegurar que sea visible siempre) */
+    [data-testid="stSidebarCollapse"] {
+        visibility: visible !important;
+        display: inline-flex !important;
     }
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# ---- HACK JAVASCRIPT PARA ELIMINAR LOS BOTONES FLOTANTES DEL CONTENEDOR PADRE ----
-# Elimina de raíz tu foto, la corona de "Manage app" y la marca de agua de Streamlit abajo a la derecha
+# ---- HACK JAVASCRIPT EXTREMO PARA EL CONTENEDOR PADRE ----
+# Elimina los banners molestos e iconos de administración de la derecha sin tocar la izquierda
 components.html(
     """
     <script>
@@ -62,7 +63,6 @@ components.html(
                 targets.forEach(e => e.style.setProperty("display", "none", "important"));
             }
         };
-        // Intentamos ocultarlo inmediatamente y con intervalos de tiempo mientras carga la página
         hideStreamlitBranding();
         setTimeout(hideStreamlitBranding, 500);
         setTimeout(hideStreamlitBranding, 1500);
@@ -80,17 +80,12 @@ components.html(
 ARCHIVO_INVENTARIO = "inventario.json"
 
 def cargar_inventario():
-    """
-    Carga el inventario real desde el archivo local o genera el inicial.
-    Mantiene estrictamente el orden de inserción de las categorías.
-    """
     if os.path.exists(ARCHIVO_INVENTARIO):
         try:
             with open(ARCHIVO_INVENTARIO, "r", encoding="utf-8") as f:
                 return json.load(f)
         except:
             pass
-    # Inventario inicial por defecto (La categoría de Ofertas va de primera)
     return {
         "🔥 Ofertas del Día": ["Combo Sopera (3Kg x $10)", "Queso Llanero en Promoción (Kg)"],
         "Res": ["Pulpa Negra (Bistec/Para Guisar)", "Carne Molida de Primera", "Lagarto con Hueso", "Costilla de Res"],
@@ -103,11 +98,9 @@ def cargar_inventario():
     }
 
 def guardar_inventario(inventario):
-    """Guarda los cambios directamente en el archivo JSON."""
     with open(ARCHIVO_INVENTARIO, "w", encoding="utf-8") as f:
         json.dump(inventario, f, ensure_ascii=False, indent=4)
 
-# Carga global limpia de datos
 inventario_local = cargar_inventario()
 
 
@@ -115,12 +108,10 @@ inventario_local = cargar_inventario()
 # 3. MOTOR DE INTELIGENCIA LINGÜÍSTICA (FUZZY MATCHING TOLERANTE)
 # =====================================================================
 def normalizar_cadena(texto):
-    """Elimina acentos y estandariza a minúsculas."""
     texto = unicodedata.normalize('NFD', texto)
     return ''.join([c for c in texto if unicodedata.category(c) != 'Mn']).lower()
 
 def coincide_busqueda(termino_usuario, nombre_articulo):
-    """Evalúa coincidencia elástica (Cubre 'javon', 'polo', 'carne')."""
     if not termino_usuario:
         return True
         
@@ -143,14 +134,28 @@ def coincide_busqueda(termino_usuario, nombre_articulo):
 
 
 # =====================================================================
-# 4. IDENTIDAD VISUAL: LOGO CENTRADO COMPACTO Y MARCA
+# 4. IDENTIDAD VISUAL: LOGO RESPONSIVO 100% CENTRADO
 # =====================================================================
-# Encapsulamos el logo en columnas balanceadas para reducir su tamaño visual
+# Evitamos las columnas de Streamlit convirtiendo la imagen a base64 para centrarla por CSS puro
+def renderizar_logo_centrado(ruta_img):
+    try:
+        with open(ruta_img, "rb") as f:
+            datos_binarios = f.read()
+        codificado = base64.b64encode(datos_binarios).decode()
+        st.markdown(
+            f"""
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px; width: 100%;">
+                <img src="data:image/png;base64,{codificado}" style="width: 95px; max-width: 100%; height: auto; display: block; margin: 0 auto;">
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    except Exception as e:
+        # Si falla por alguna razón, se despliega en texto
+        pass
+
 if os.path.exists("logo.png"):
-    col_izq, col_centro, col_der = st.columns([4.5, 1, 4.5])
-    with col_centro:
-        # Se muestra nítido, centrado y con un ancho estilizado de 95px (20% más pequeño)
-        st.image("logo.png", width=95)
+    renderizar_logo_centrado("logo.png")
 
 st.markdown("<h1 style='text-align: center; color: #D32F2F; font-family: Arial, sans-serif; letter-spacing: 2px; margin-top: 0px;'>TROPICARNES</h1>", unsafe_allow_html=True)
 st.markdown("<h4 style='text-align: center; color: #555555; font-style: italic;'>Calidad, frescura y conveniencia en su celular o PC</h4>", unsafe_allow_html=True)
@@ -221,7 +226,6 @@ st.subheader("🛒 Generador de Pedidos Express")
 st.write("Seleccione sus productos abajo y envíe su lista directo a nuestro WhatsApp sin hacer colas, ni esperar.")
 st.markdown("---")
 
-# Buscador elástico blindado en dos columnas con botón táctil para teléfonos
 col_busqueda, col_boton = st.columns([4, 1])
 
 with col_busqueda:
@@ -240,7 +244,6 @@ carrito_compras = []
 st.markdown("---")
 st.subheader("👇 Arme su Pedido Aquí")
 
-# Despliegue del menú respetando el orden del diccionario local (Ofertas siempre primero)
 for categoria, productos in inventario_local.items():
     if productos: 
         productos_filtrados = [p for p in sorted(productos) if coincide_busqueda(buscar_vecino, p)]
@@ -288,8 +291,7 @@ else:
         key="input_notas_pedido"
     )
     
-    # RUTA LOGÍSTICA EXCLUSIVA PARA SUGEY
-    TELEFONO_SUGEY = "584140766601"  # <- Colocar aquí el número real de Sugey para producción
+    TELEFONO_SUGEY = "584140766601"
     
     if st.button("🚀 Enviar Pedido Listo por WhatsApp", type="primary", key="btn_enviar_pedido"):
         texto_wa = "*¡Hola Tropicarnes!* Aquí tengo listo mi pedido Express para retirar:\n\n"
