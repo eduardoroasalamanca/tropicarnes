@@ -21,11 +21,11 @@ st.set_page_config(
     page_icon=icono_app
 )
 
-# ---- COMPONENTE DE ESTILO CSS QUIRÚRGICO ----
-# Oculta de raíz la parte derecha de la cabecera, pero blinda el botón del menú izquierdo
+# ---- COMPONENTE DE ESTILO CSS INTERNO DE LA APP ----
+# Oculta elementos internos de la interfaz pero blinda el botón del menú izquierdo
 hide_streamlit_style = """
     <style>
-    /* Ocultar menú de 3 puntos y botón de Deploy en el top derecho */
+    /* Ocultar menú de 3 puntos y botón de Deploy en el top derecho interno */
     #MainMenu {visibility: hidden; display: none !important;}
     [data-testid="stMainMenu"] {visibility: hidden; display: none !important;}
     .stAppDeployButton {display: none !important;}
@@ -35,13 +35,13 @@ hide_streamlit_style = """
     div[data-testid="stDecoration"] {display: none !important;}
     #stConnectionStatus {display: none !important;}
     
-    /* Hacer la cabecera transparente pero activa para que el botón sidebar funcione */
+    /* Hacer la cabecera transparente pero activa para el botón sidebar */
     [data-testid="stHeader"] {
         background-color: rgba(0,0,0,0) !important;
         background: transparent !important;
     }
     
-    /* BLINDAR EL BOTÓN DEL MENU IZQUIERDO (Asegurar que sea visible siempre) */
+    /* BLINDAR EL BOTÓN DEL MENU IZQUIERDO (Asegurar que se vea siempre) */
     [data-testid="stSidebarCollapse"] {
         visibility: visible !important;
         display: inline-flex !important;
@@ -51,23 +51,68 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # ---- HACK JAVASCRIPT EXTREMO PARA EL CONTENEDOR PADRE ----
-# Elimina los banners molestos e iconos de administración de la derecha sin tocar la izquierda
+# Inyecta estilos directamente en la ventana principal de Streamlit Cloud y barre constantemente
 components.html(
     """
     <script>
         const hideStreamlitBranding = () => {
             if (window.top && window.top.document) {
-                const targets = window.top.document.querySelectorAll(
-                    '[href*="streamlit.io"], [class*="viewerBadge"], [class*="StatusWidget"], [data-testid="stStatusWidget"], iframe[title="Manage app"], button[data-testid="manage-app-button"]'
+                const doc = window.top.document;
+                
+                // 1. Inyectar CSS directamente en el documento PADRE para aplastar el toolbar de raíz
+                if (!doc.getElementById('tropicarnes-parent-cleaner')) {
+                    const style = doc.createElement('style');
+                    style.id = 'tropicarnes-parent-cleaner';
+                    style.innerHTML = `
+                        /* Ocultar enlaces de GitHub, Manage App y marcas de agua en el padre */
+                        a[href*="github.com"] { display: none !important; }
+                        iframe[title="Manage app"] { display: none !important; }
+                        button[data-testid="manage-app-button"] { display: none !important; }
+                        [href*="streamlit.io"] { display: none !important; }
+                        [class*="viewerBadge"] { display: none !important; }
+                        [class*="StatusWidget"] { display: none !important; }
+                        [data-testid="stStatusWidget"] { display: none !important; }
+                        
+                        /* Ocultar el toolbar superior derecho del visualizador de Streamlit Cloud */
+                        div[class*="ViewerHeader"] button:not([data-testid="stSidebarCollapse"]),
+                        div[class*="ViewerHeader"] a,
+                        div[class*="viewer-header"] button:not([data-testid="stSidebarCollapse"]),
+                        div[class*="viewer-header"] a,
+                        header button:not([data-testid="stSidebarCollapse"]),
+                        header a,
+                        div[class*="Header"] button:not([data-testid="stSidebarCollapse"]),
+                        div[class*="Header"] a {
+                            display: none !important;
+                            visibility: hidden !important;
+                        }
+                    `;
+                    doc.head.appendChild(style);
+                }
+                
+                // 2. Ejecutar limpieza activa por JS por si acaso para barrer elementos renderizados dinámicamente
+                const targets = doc.querySelectorAll(
+                    '[href*="github.com"], [href*="streamlit.io"], [class*="viewerBadge"], [class*="StatusWidget"], [data-testid="stStatusWidget"], iframe[title="Manage app"], button[data-testid="manage-app-button"]'
                 );
                 targets.forEach(e => e.style.setProperty("display", "none", "important"));
+                
+                // Ocultar botones de la barra superior que tengan texto 'Share', 'Edit' o iconos de 'Star'
+                const allButtons = doc.querySelectorAll('button, a');
+                allButtons.forEach(e => {
+                    const text = (e.textContent || '').trim().toLowerCase();
+                    const label = (e.getAttribute('aria-label') || '').toLowerCase();
+                    const title = (e.getAttribute('title') || '').toLowerCase();
+                    if (text === 'share' || label.includes('edit') || title.includes('edit') || 
+                        label.includes('star') || title.includes('star') || 
+                        label.includes('favorite') || title.includes('favorite')) {
+                        e.style.setProperty("display", "none", "important");
+                    }
+                });
             }
         };
+        
+        // Ejecutar limpieza inmediata y dejar un loop activo cada segundo para evitar el resurgimiento por React
         hideStreamlitBranding();
-        setTimeout(hideStreamlitBranding, 500);
-        setTimeout(hideStreamlitBranding, 1500);
-        setTimeout(hideStreamlitBranding, 3000);
-        setTimeout(hideStreamlitBranding, 5000);
+        setInterval(hideStreamlitBranding, 1000);
     </script>
     """,
     height=0,
@@ -136,7 +181,6 @@ def coincide_busqueda(termino_usuario, nombre_articulo):
 # =====================================================================
 # 4. IDENTIDAD VISUAL: LOGO RESPONSIVO 100% CENTRADO
 # =====================================================================
-# Evitamos las columnas de Streamlit convirtiendo la imagen a base64 para centrarla por CSS puro
 def renderizar_logo_centrado(ruta_img):
     try:
         with open(ruta_img, "rb") as f:
@@ -151,7 +195,6 @@ def renderizar_logo_centrado(ruta_img):
             unsafe_allow_html=True
         )
     except Exception as e:
-        # Si falla por alguna razón, se despliega en texto
         pass
 
 if os.path.exists("logo.png"):
