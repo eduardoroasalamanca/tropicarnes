@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import urllib.parse
 import json
 import os
@@ -21,49 +20,37 @@ st.set_page_config(
     page_icon=icono_app
 )
 
-# ---- REDIRECCIÓN AUTOMÁTICA AL MODO EMBEBIDO LIMPIO (GARANTÍA ABSOLUTA) ----
-# Si el usuario entra por la URL normal, lo llevamos de inmediato a la versión sin barra de desarrollo
-components.html(
-    """
-    <script>
-        // Solo aplicar la redirección automática si estamos en el servidor de producción
-        if (window.location.hostname.includes('streamlit.app')) {
-            if (!window.location.search.includes('embed=true')) {
-                window.top.location.href = "https://tropicarnes.streamlit.app/?embed=true";
-            }
-        }
-    </script>
-    """,
-    height=0,
-)
-
-# ---- COMPONENTE DE ESTILO CSS QUIRÚRGICO INTERNO ----
-# Oculta únicamente los elementos molestos del iframe local sin alterar el menú lateral
+# ---- COMPONENTE DE ESTILO CSS QUIRÚRGICO (LIMPIEZA DE INTERFAZ) ----
 hide_streamlit_style = """
     <style>
-    /* Ocultar la barra roja superior */
+    /* Ocultar la línea roja decorativa superior */
     div[data-testid="stDecoration"] { 
         display: none !important; 
     }
     
-    /* Ocultar el pie de página de Streamlit */
+    /* Ocultar el pie de página estándar ("Made with Streamlit") */
     footer { 
         display: none !important; 
         visibility: hidden !important; 
     }
     
-    /* Ocultar el menú interno de 3 puntos si llegase a aparecer */
-    [data-testid="stMainMenu"] { 
-        display: none !important; 
-        visibility: hidden !important; 
+    /* ELIMINAR EL BANNER INFERIOR DEL EMBED (Built with Streamlit & Fullscreen) */
+    [data-testid="stEmbedFooter"],
+    .stEmbedFooter,
+    [class*="embedFooter"],
+    [class*="viewerBadge"] {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
     }
     
-    /* Ocultar el botón interno de Deploy */
-    .stAppDeployButton { 
-        display: none !important; 
+    /* Reajustar el lienzo para evitar el espacio en blanco inferior */
+    .stApp {
+        margin-bottom: 0px !important;
+        padding-bottom: 0px !important;
     }
     
-    /* Asegurar que el fondo de la cabecera no tape el botón del menú */
+    /* Asegurar que la cabecera sea transparente para no tapar el menú flotante izquierdo */
     [data-testid="stHeader"] {
         background-color: rgba(0,0,0,0) !important;
         background: transparent !important;
@@ -93,7 +80,7 @@ def cargar_inventario():
         "Charcutería y Quesos": ["Queso Blanco Duro (Llanero)", "Queso Blanco Semiduro", "Queso Amarillo", "Jamón Fiambre"],
         "Víveres Esenciales": ["Harina de Maíz Harina P.A.N. 1kg", "Arroz Blanco Primor 1kg", "Pasta Alimenticia 1kg", "Aceite Vegetal 1L", "Café Molido Local"],
         "Panadería Artesanal": ["Pan Canilla (Unidad)", "Pan Campesino (Unidad)"],
-        "Limpieza y Aseo": ["Jabón en Polvo 1kg", "Cloro Líquido 1L", "Lavaplatos en Crema"]
+        "Limpieza y Aseo": ["Jabón en Polvo 1kg", "Cloro Líquido 1L", "Lavaplatos en Cream"]
     }
 
 def guardar_inventario(inventario):
