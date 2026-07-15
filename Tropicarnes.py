@@ -236,7 +236,7 @@ for categoria, productos in inventario_local.items():
                         )
                     
                     if cantidad > 0:
-                        carrito_compras.append({"item": prod, "cant": cantidad, "unidad": label_unidad.lower()})
+                        carrito_compras.append({"item": prod, "cant": quantity := cantidad, "unidad": label_unidad.lower()})
 
 
 # =====================================================================
