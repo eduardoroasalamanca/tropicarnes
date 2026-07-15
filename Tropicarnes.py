@@ -20,40 +20,31 @@ st.set_page_config(
     page_icon=icono_app
 )
 
-# ---- COMPONENTE DE ESTILO CSS QUIRÚRGICO (LIMPIEZA DE INTERFAZ) ----
+# ---- COMPONENTE DE ESTILO CSS PARA INTERFAZ LIMPIA (URL NORMAL) ----
 hide_streamlit_style = """
     <style>
-    /* Ocultar la línea roja decorativa superior */
+    /* 1. Ocultar la línea roja decorativa superior */
     div[data-testid="stDecoration"] { 
         display: none !important; 
     }
     
-    /* Ocultar el pie de página estándar ("Made with Streamlit") */
+    /* 2. Ocultar por completo el pie de página estándar ("Made with Streamlit") */
     footer { 
         display: none !important; 
         visibility: hidden !important; 
     }
     
-    /* ELIMINAR EL BANNER INFERIOR DEL EMBED (Built with Streamlit & Fullscreen) */
-    [data-testid="stEmbedFooter"],
-    .stEmbedFooter,
-    [class*="embedFooter"],
-    [class*="viewerBadge"] {
-        display: none !important;
-        visibility: hidden !important;
-        height: 0px !important;
-    }
-    
-    /* Reajustar el lienzo para evitar el espacio en blanco inferior */
-    .stApp {
-        margin-bottom: 0px !important;
-        padding-bottom: 0px !important;
-    }
-    
-    /* Asegurar que la cabecera sea transparente para no tapar el menú flotante izquierdo */
+    /* 3. Hacer transparente la cabecera para mantener despejado el botón del menú lateral */
     [data-testid="stHeader"] {
         background-color: rgba(0,0,0,0) !important;
         background: transparent !important;
+        border-bottom: none !important;
+    }
+    
+    /* 4. Evitar márgenes excesivos en la parte inferior de la aplicación */
+    .stApp {
+        margin-bottom: 0px !important;
+        padding-bottom: 0px !important;
     }
     </style>
 """
@@ -80,7 +71,7 @@ def cargar_inventario():
         "Charcutería y Quesos": ["Queso Blanco Duro (Llanero)", "Queso Blanco Semiduro", "Queso Amarillo", "Jamón Fiambre"],
         "Víveres Esenciales": ["Harina de Maíz Harina P.A.N. 1kg", "Arroz Blanco Primor 1kg", "Pasta Alimenticia 1kg", "Aceite Vegetal 1L", "Café Molido Local"],
         "Panadería Artesanal": ["Pan Canilla (Unidad)", "Pan Campesino (Unidad)"],
-        "Limpieza y Aseo": ["Jabón en Polvo 1kg", "Cloro Líquido 1L", "Lavaplatos en Cream"]
+        "Limpieza y Aseo": ["Jabón en Polvo 1kg", "Cloro Líquido 1L", "Lavaplatos en Crema"]
     }
 
 def guardar_inventario(inventario):
