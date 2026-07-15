@@ -22,47 +22,51 @@ st.set_page_config(
 )
 
 # ---- COMPONENTE DE ESTILO PARA OCULTAR ELEMENTOS SIN DAÑAR EL SIDEBAR ----
-# Ocultamos solo lo innecesario, pero dejamos libre y funcional el botón del sidebar izquierdo
+# Ocultamos selectivamente la parte derecha de la cabecera, dejando libre la izquierda
 hide_streamlit_style = """
     <style>
-    /* Ocultar el menú de los 3 puntos superior derecho */
+    /* Ocultar el menú de los 3 puntos y botón de deploy por defecto */
     #MainMenu {visibility: hidden; display: none !important;}
-    
-    /* Ocultar el pie de página de Streamlit */
-    footer {visibility: hidden; display: none !important;}
-    
-    /* Ocultar la línea roja/decorativa superior */
-    div[data-testid="stDecoration"] {display: none !important;}
-    
-    /* Ocultar el botón de Deploy (Share) */
+    [data-testid="stMainMenu"] {visibility: hidden; display: none !important;}
     .stAppDeployButton {display: none !important;}
     
-    /* Ocultar el estatus de conexión */
+    /* Ocultar el pie de página y la línea decorativa */
+    footer {visibility: hidden; display: none !important;}
+    div[data-testid="stDecoration"] {display: none !important;}
     #stConnectionStatus {display: none !important;}
     
-    /* Hacer la cabecera invisible pero activa para que el botón de abrir sidebar siga funcionando */
+    /* Hacer la cabecera transparente para que no estorbe */
     [data-testid="stHeader"] {
         background-color: rgba(0,0,0,0) !important;
         background: transparent !important;
+    }
+    
+    /* BLOQUEO SELECTIVO: Oculta todo enlace o botón en la cabecera EXCEPTO el del sidebar */
+    [data-testid="stHeader"] a, 
+    [data-testid="stHeader"] button:not([data-testid="stSidebarCollapse"]),
+    [data-testid="stHeader"] div[class*="stToolbar"],
+    [data-testid="stHeader"] div[class*="stHeaderToolbar"] {
+        display: none !important;
+        visibility: hidden !important;
     }
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# ---- HACK JAVASCRIPT PARA ELIMINAR LOS BOTONES FLOTANTES DEL CONTENEDOR PADRE ----
-# Elimina de raíz tu foto, la corona de "Manage app" y la marca de agua de Streamlit abajo a la derecha
+# ---- HACK JAVASCRIPT EXTREMO PARA ELIMINAR LOS ELEMENTOS DEL CONTENEDOR PADRE ----
+# Limpia la parte superior derecha (GitHub/Editar) y la inferior derecha (Manage app/Avatar) en la ventana principal
 components.html(
     """
     <script>
         const hideStreamlitBranding = () => {
             if (window.top && window.top.document) {
                 const targets = window.top.document.querySelectorAll(
-                    '[href*="streamlit.io"], [class*="viewerBadge"], [class*="StatusWidget"], [data-testid="stStatusWidget"], iframe[title="Manage app"], button[data-testid="manage-app-button"]'
+                    '[href*="streamlit.io"], [class*="viewerBadge"], [class*="StatusWidget"], [data-testid="stStatusWidget"], iframe[title="Manage app"], button[data-testid="manage-app-button"], header[data-testid="stHeader"] a, header[data-testid="stHeader"] button:not([data-testid="stSidebarCollapse"]), [class*="stAppHeader"] button:not([data-testid="stSidebarCollapse"]), [class*="stAppHeader"] a'
                 );
                 targets.forEach(e => e.style.setProperty("display", "none", "important"));
             }
         };
-        // Intentamos ocultarlo inmediatamente y con intervalos de tiempo mientras carga la página
+        // Intentamos ejecutarlo a intervalos para asegurar que agarre todos los elementos al cargar
         hideStreamlitBranding();
         setTimeout(hideStreamlitBranding, 500);
         setTimeout(hideStreamlitBranding, 1500);
