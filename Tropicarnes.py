@@ -22,7 +22,6 @@ st.set_page_config(
 )
 
 # ---- COMPONENTE DE ESTILO CSS QUIRÚRGICO ----
-# Oculta de raíz la parte derecha de la cabecera, pero blinda el botón del menú izquierdo
 hide_streamlit_style = """
     <style>
     /* Ocultar menú de 3 puntos y botón de Deploy en el top derecho */
@@ -51,7 +50,6 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # ---- HACK JAVASCRIPT EXTREMO PARA EL CONTENEDOR PADRE ----
-# Elimina los banners molestos e iconos de administración de la derecha sin tocar la izquierda
 components.html(
     """
     <script>
@@ -136,7 +134,6 @@ def coincide_busqueda(termino_usuario, nombre_articulo):
 # =====================================================================
 # 4. IDENTIDAD VISUAL: LOGO RESPONSIVO 100% CENTRADO
 # =====================================================================
-# Evitamos las columnas de Streamlit convirtiendo la imagen a base64 para centrarla por CSS puro
 def renderizar_logo_centrado(ruta_img):
     try:
         with open(ruta_img, "rb") as f:
@@ -151,7 +148,6 @@ def renderizar_logo_centrado(ruta_img):
             unsafe_allow_html=True
         )
     except Exception as e:
-        # Si falla por alguna razón, se despliega en texto
         pass
 
 if os.path.exists("logo.png"):
@@ -174,7 +170,11 @@ with st.sidebar:
     st.markdown("#### ⚙️ Modificar Inventario")
     clave_acceso = st.text_input("Contraseña Administrativa:", type="password", key="clave_admin_sidebar")
     
-    modo_admin = (clave_acceso == "tropicarnes2026")
+    # --- SEGURIDAD: Uso de Secrets ---
+    admin_secret = st.secrets.get("ADMIN_PASSWORD", "no_configurado")
+    modo_admin = (clave_acceso == admin_secret)
+    # --------------------------------
+    
     if clave_acceso and not modo_admin:
         st.error("Contraseña incorrecta")
 
