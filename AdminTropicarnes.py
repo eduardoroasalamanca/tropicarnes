@@ -54,19 +54,43 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 components.html(
     """
     <script>
-        const hideStreamlitBranding = () => {
-            if (window.top && window.top.document) {
-                const targets = window.top.document.querySelectorAll(
-                    '[href*="streamlit.io"], [class*="viewerBadge"], [class*="StatusWidget"], [data-testid="stStatusWidget"], iframe[title="Manage app"], button[data-testid="manage-app-button"]'
-                );
-                targets.forEach(e => e.style.setProperty("display", "none", "important"));
-            }
-        };
-        hideStreamlitBranding();
-        setTimeout(hideStreamlitBranding, 500);
-        setTimeout(hideStreamlitBranding, 1500);
-        setTimeout(hideStreamlitBranding, 3000);
-        setTimeout(hideStreamlitBranding, 5000);
+    (function () {
+        const SELECTORES = [
+            'a[href*="streamlit.io"]',
+            'a[href*="share.streamlit.io"]',
+            '[class*="viewerBadge"]',
+            '[class*="StatusWidget"]',
+            '[data-testid="stStatusWidget"]',
+            '[data-testid="stToolbar"]',
+            'iframe[title="Manage app"]',
+            'button[data-testid="manage-app-button"]'
+        ];
+
+        function ocultarEn(doc) {
+            if (!doc) return;
+            SELECTORES.forEach(function (sel) {
+                doc.querySelectorAll(sel).forEach(function (el) {
+                    el.style.setProperty("display", "none", "important");
+                    el.style.setProperty("visibility", "hidden", "important");
+                    el.style.setProperty("pointer-events", "none", "important");
+                });
+            });
+        }
+
+        function ejecutar() {
+            try { ocultarEn(window.top.document); } catch (e) {}
+            ocultarEn(document);
+        }
+
+        ejecutar();
+
+        try {
+            const observer = new MutationObserver(ejecutar);
+            observer.observe(window.top.document.body, { childList: true, subtree: true });
+        } catch (e) {}
+
+        setInterval(ejecutar, 1000);
+    })();
     </script>
     """,
     height=0,

@@ -39,23 +39,58 @@ hide_streamlit_style = """
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# ---- HACK JAVASCRIPT EXTREMO PARA EL CONTENEDOR PADRE ----
+# ---- BLOQUEO PERMANENTE DE ELEMENTOS ADMINISTRATIVOS/PUBLICITARIOS ----
+# A diferencia de la versión anterior (que solo ocultaba estos elementos
+# durante los primeros 5 segundos), este bloque usa un MutationObserver:
+# un vigilante que se queda activo todo el tiempo que el cliente use la
+# app y vuelve a ocultar el ícono/badge de administrador cada vez que
+# Streamlit redibuja el DOM (al elegir cantidades, expandir categorías,
+# buscar, hacer scroll en móvil, etc.). Así nunca queda una ventana en
+# la que ese acceso pueda reaparecer.
 components.html(
     """
     <script>
-        const hideStreamlitBranding = () => {
-            if (window.top && window.top.document) {
-                const targets = window.top.document.querySelectorAll(
-                    '[href*="streamlit.io"], [class*="viewerBadge"], [class*="StatusWidget"], [data-testid="stStatusWidget"], iframe[title="Manage app"], button[data-testid="manage-app-button"]'
-                );
-                targets.forEach(e => e.style.setProperty("display", "none", "important"));
-            }
-        };
-        hideStreamlitBranding();
-        setTimeout(hideStreamlitBranding, 500);
-        setTimeout(hideStreamlitBranding, 1500);
-        setTimeout(hideStreamlitBranding, 3000);
-        setTimeout(hideStreamlitBranding, 5000);
+    (function () {
+        const SELECTORES = [
+            'a[href*="streamlit.io"]',
+            'a[href*="share.streamlit.io"]',
+            '[class*="viewerBadge"]',
+            '[class*="StatusWidget"]',
+            '[data-testid="stStatusWidget"]',
+            '[data-testid="stToolbar"]',
+            'iframe[title="Manage app"]',
+            'button[data-testid="manage-app-button"]'
+        ];
+
+        function ocultarEn(doc) {
+            if (!doc) return;
+            SELECTORES.forEach(function (sel) {
+                doc.querySelectorAll(sel).forEach(function (el) {
+                    el.style.setProperty("display", "none", "important");
+                    el.style.setProperty("visibility", "hidden", "important");
+                    el.style.setProperty("pointer-events", "none", "important");
+                });
+            });
+        }
+
+        function ejecutar() {
+            try { ocultarEn(window.top.document); } catch (e) {}
+            ocultarEn(document);
+        }
+
+        ejecutar();
+
+        // Vigilante permanente: reacciona a cualquier cambio en el DOM
+        // del documento superior, sin fecha de vencimiento.
+        try {
+            const observer = new MutationObserver(ejecutar);
+            observer.observe(window.top.document.body, { childList: true, subtree: true });
+        } catch (e) {}
+
+        // Respaldo adicional por si el observer no puede montarse en
+        // algún navegador móvil con restricciones de origen.
+        setInterval(ejecutar, 1000);
+    })();
     </script>
     """,
     height=0,
