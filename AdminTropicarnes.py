@@ -264,6 +264,10 @@ if modo_admin:
                 if prod_a_borrar in inventario_local[cat_seleccionada]:
                     inventario_local[cat_seleccionada].remove(prod_a_borrar)
                     guardar_inventario(inventario_local)
+                    # Si el producto eliminado estaba en la memoria del carrito
+                    # de algún cliente en esta misma sesión, se limpia también.
+                    if "carrito_state" in st.session_state:
+                        st.session_state.carrito_state.pop(prod_a_borrar, None)
                     st.success(f"Retirado: {prod_a_borrar}")
                     st.rerun()
         else:
@@ -291,6 +295,20 @@ with col_boton:
     st.markdown("<div style='padding-top: 28px;'></div>", unsafe_allow_html=True)
     ejecutar_busqueda = st.button("🔎 Filtrar", use_container_width=True, key="btn_filtrar_vecino")
 
+# --- MEMORIA PERSISTENTE DEL CARRITO ---
+# Igual que en la app de cliente: el carrito vive en session_state y se
+# actualiza mediante on_change, para que no se pierda un producto al
+# alternar entre búsqueda y menú por categoría.
+if "carrito_state" not in st.session_state:
+    st.session_state.carrito_state = {}
+
+def _actualizar_carrito(prod, unidad):
+    valor = st.session_state.get(f"input_{prod}", 0.0)
+    if valor and valor > 0:
+        st.session_state.carrito_state[prod] = {"item": prod, "cant": valor, "unidad": unidad}
+    else:
+        st.session_state.carrito_state.pop(prod, None)
+
 carrito_compras = []
 
 st.markdown("---")
@@ -311,16 +329,19 @@ for categoria, productos in inventario_local.items():
                         paso_medida = 1.0 if es_unidad else 0.5
                         label_unidad = "Unds" if es_unidad else "Kilos"
                         
-                        cantidad = st.number_input(
+                        st.number_input(
                             label=f"{label_unidad} de {prod}",
                             min_value=0.0,
                             step=paso_medida,
                             key=f"input_{prod}",
-                            label_visibility="collapsed"
+                            label_visibility="collapsed",
+                            on_change=_actualizar_carrito,
+                            args=(prod, label_unidad.lower())
                         )
-                    
-                    if cantidad > 0:
-                        carrito_compras.append({"item": prod, "cant": cantidad, "unidad": label_unidad.lower()})
+
+# El carrito final se construye SIEMPRE desde la memoria persistente,
+# nunca desde el bucle de renderizado filtrado.
+carrito_compras = list(st.session_state.carrito_state.values())
 
 
 # =====================================================================

@@ -183,7 +183,21 @@ with col_boton:
     st.markdown("<div style='padding-top: 28px;'></div>", unsafe_allow_html=True)
     ejecutar_busqueda = st.button("🔎 Filtrar", use_container_width=True, key="btn_filtrar_vecino")
 
-carrito_compras = []
+# --- MEMORIA PERSISTENTE DEL CARRITO ---
+# El carrito ya NO se arma leyendo solo lo que está visible en pantalla
+# (eso es lo que causaba que se "perdiera" un producto al cambiar de
+# categoría a búsqueda o viceversa). Ahora vive en session_state y se
+# actualiza mediante on_change cada vez que el cliente toca una cantidad,
+# sin importar si ese producto sigue visible en el siguiente rerun.
+if "carrito_state" not in st.session_state:
+    st.session_state.carrito_state = {}
+
+def _actualizar_carrito(prod, unidad):
+    valor = st.session_state.get(f"input_{prod}", 0.0)
+    if valor and valor > 0:
+        st.session_state.carrito_state[prod] = {"item": prod, "cant": valor, "unidad": unidad}
+    else:
+        st.session_state.carrito_state.pop(prod, None)
 
 st.markdown("---")
 st.subheader("👇 Arme su Pedido Aquí")
@@ -203,16 +217,19 @@ for categoria, productos in inventario_local.items():
                         paso_medida = 1.0 if es_unidad else 0.5
                         label_unidad = "Unds" if es_unidad else "Kilos"
                         
-                        cantidad = st.number_input(
+                        st.number_input(
                             label=f"{label_unidad} de {prod}",
                             min_value=0.0,
                             step=paso_medida,
                             key=f"input_{prod}",
-                            label_visibility="collapsed"
+                            label_visibility="collapsed",
+                            on_change=_actualizar_carrito,
+                            args=(prod, label_unidad.lower())
                         )
-                    
-                    if cantidad > 0:
-                        carrito_compras.append({"item": prod, "cant": cantidad, "unidad": label_unidad.lower()})
+
+# El carrito final se construye SIEMPRE desde la memoria persistente,
+# nunca desde el bucle de renderizado filtrado.
+carrito_compras = list(st.session_state.carrito_state.values())
 
 
 # =====================================================================
