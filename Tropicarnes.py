@@ -241,9 +241,25 @@ st.subheader("📋 Revisión de su Bolsa")
 if not carrito_compras:
     st.info("Su bolsa está vacía. Seleccione la cantidad en los productos de arriba para armar el pedido.")
 else:
+    def _quitar_del_carrito(prod):
+        # Borra el artículo de la memoria del carrito y reinicia su
+        # cantidad a cero para que el número visible también se limpie.
+        st.session_state.carrito_state.pop(prod, None)
+        st.session_state[f"input_{prod}"] = 0.0
+
     for pedido in carrito_compras:
-        st.write(f"✅ **{pedido['cant']} {pedido['unidad']}** de {pedido['item']}")
-        
+        col_item, col_quitar = st.columns([5, 1])
+        with col_item:
+            st.write(f"✅ **{pedido['cant']} {pedido['unidad']}** de {pedido['item']}")
+        with col_quitar:
+            st.button(
+                "🗑️ Quitar",
+                key=f"btn_quitar_{pedido['item']}",
+                on_click=_quitar_del_carrito,
+                args=(pedido['item'],),
+                use_container_width=True
+            )
+
     st.markdown("---")
     nombre_vecino = st.text_input("Introduzca su Nombre (Opcional):", placeholder="Ej. Sra. Carmen (Piso 2)", key="input_nombre_vecino")
     notes_pedido = st.text_area(
@@ -254,20 +270,32 @@ else:
     
     TELEFONO_SUGEY = "584140766601"
     
-    if st.button("🚀 Enviar Pedido Listo por WhatsApp", type="primary", key="btn_enviar_pedido"):
-        texto_wa = "*¡Hola Tropicarnes!* Aquí tengo listo mi pedido Express para retirar:\n\n"
-        for pedido in carrito_compras:
-            texto_wa += f"- {pedido['cant']} {pedido['unidad']} de {pedido['item']}\n"
-        
-        if notas_limpias := notes_pedido.strip():
-            texto_wa += f"\n*Notas especiales:* {notas_limpias}\n"
-        
-        texto_wa += "\n*Nota:* Por favor, me avisan por aquí mismo cuando lo tengan listo para pasar pagando y retirando de una vez. ¡Muchas gracias!"
-        if nombre_vecino:
-            texto_wa += f"\n\n*Cliente:* {nombre_vecino}"
-            
-        texto_codificado = urllib.parse.quote(texto_wa)
-        url_final = f"https://wa.me/{TELEFONO_SUGEY}?text={texto_codificado}"
-        
-        st.success("¡Estructura de pedido acoplada!")
-        st.markdown(f"[📲 HACER CLIC AQUÍ PARA ENVIAR EL PEDIDO]({url_final})")
+    # El mensaje se arma en cada rerun (no dentro de un st.button), de modo
+    # que el enlace de WhatsApp esté listo desde ya y el cliente solo
+    # necesite un toque para llegar a WhatsApp con el pedido pre-escrito.
+    texto_wa = "*¡Hola Tropicarnes!* Aquí tengo listo mi pedido Express para retirar:\n\n"
+    for pedido in carrito_compras:
+        texto_wa += f"- {pedido['cant']} {pedido['unidad']} de {pedido['item']}\n"
+
+    if notas_limpias := notes_pedido.strip():
+        texto_wa += f"\n*Notas especiales:* {notas_limpias}\n"
+
+    texto_wa += "\n*Nota:* Por favor, me avisan por aquí mismo cuando lo tengan listo para pasar pagando y retirando de una vez. ¡Muchas gracias!"
+    if nombre_vecino:
+        texto_wa += f"\n\n*Cliente:* {nombre_vecino}"
+
+    texto_codificado = urllib.parse.quote(texto_wa)
+    url_final = f"https://wa.me/{TELEFONO_SUGEY}?text={texto_codificado}"
+
+    st.markdown(
+        f"""
+        <a href="{url_final}" target="_blank" rel="noopener noreferrer"
+           style="display:block; text-align:center; background-color:#FF7A00; color:#FFFFFF;
+                  padding:14px; border-radius:8px; font-weight:bold; text-decoration:none;
+                  font-size:17px; margin-top:10px;">
+            🚀 Enviar Pedido Listo por WhatsApp
+        </a>
+        """,
+        unsafe_allow_html=True
+    )
+    st.caption("Al pisar el botón se abrirá WhatsApp con su pedido ya escrito. Solo falta que usted confirme el envío allí.")
